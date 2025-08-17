@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>GLB Viewer (Three.js)</title>
+  <title>GLB Viewer</title>
   <style>
     html,body{height:100%;margin:0;background:#111}
     #c{width:100%;height:100%;display:block}
@@ -14,7 +14,6 @@
 <body>
   <div id="log">로딩 중…</div>
   <canvas id="c"></canvas>
-
   <script type="module">
     import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js";
     import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js";
@@ -26,8 +25,7 @@
     const logEl = document.getElementById('log');
     const log = (m)=> logEl.textContent = m;
 
-    const canvas = document.getElementById('c');
-    const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+    const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('c'), antialias:true});
     renderer.setPixelRatio(devicePixelRatio);
     renderer.setSize(innerWidth, innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -39,71 +37,39 @@
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // 조명
     scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 1.0));
     const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-    dir.position.set(3, 5, 4);
-    scene.add(dir);
+    dir.position.set(3, 5, 4); scene.add(dir);
 
-    // 로더 세팅 (압축/텍스처 대응)
     const loader = new GLTFLoader();
     const draco = new DRACOLoader();
-    // Google CDN의 Draco 디코더(버전 고정)
     draco.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
     loader.setDRACOLoader(draco);
     loader.setMeshoptDecoder(MeshoptDecoder);
 
-    const ktx2 = new KTX2Loader()
-      .setTranscoderPath("https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/libs/basis/");
+    const ktx2 = new KTX2Loader().setTranscoderPath("https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/libs/basis/");
     ktx2.detectSupport(renderer);
     loader.setKTX2Loader(ktx2);
 
-    // GLB 로드
-    const url = "./untitled.glb?v=3"; // 캐시 회피
+    const url = "./untitled.glb?v=5"; // 캐시 회피
     loader.load(url, (gltf)=>{
-      const model = gltf.scene;
-      scene.add(model);
-
-      // 프레이밍: 모델 박스 기준 카메라 거리/타겟 자동 설정
+      const model = gltf.scene; scene.add(model);
       const box = new THREE.Box3().setFromObject(model);
       const size = new THREE.Vector3(); box.getSize(size);
       const center = new THREE.Vector3(); box.getCenter(center);
-
-      // 모델을 원점으로 이동(보기 편하게)
       model.position.sub(center);
-
-      const radius = Math.max(size.x, size.y, size.z) * 0.6;
-      const dist = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5));
-      camera.position.set(0, radius * 0.6, dist);
-      controls.target.set(0, 0, 0);
-      controls.update();
-
-      log('✅ 로딩 성공');
-      animate();
+      const radius = Math.max(size.x, size.y, size.z)*0.6;
+      const dist = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov*0.5));
+      camera.position.set(0, radius*0.6, dist);
+      controls.target.set(0,0,0); controls.update();
+      log('✅ 로딩 성공'); animate();
     }, (xhr)=>{
-      if (xhr.total) {
-        const p = ((xhr.loaded / xhr.total) * 100).toFixed(0);
-        log(`로딩 중… ${p}%`);
-      } else {
-        log(`로딩 중… ${Math.round(xhr.loaded/1024/1024)} MB`);
-      }
+      if (xhr.total) log(`로딩 중… ${((xhr.loaded/xhr.total)*100).toFixed(0)}%`);
+      else log(`로딩 중… ${Math.round(xhr.loaded/1024/1024)} MB`);
     }, (err)=>{
-      console.error(err);
-      log('❌ 로드 실패: ' + (err?.message || '알 수 없는 오류'));
+      console.error(err); log('❌ 로드 실패: ' + (err?.message || '알 수 없는 오류'));
     });
 
-    function animate(){
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
+    function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, in
 
-    // 리사이즈
-    addEventListener('resize', ()=>{
-      camera.aspect = innerWidth/innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight);
-    });
-  </script>
-</body>
-</html>
