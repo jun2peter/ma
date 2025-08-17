@@ -1,97 +1,47 @@
-<!--
-  embed_3d_model.html
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3D Model Viewer – Debug</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    html,body{margin:0;height:100%}
+    model-viewer{width:100%;height:100%;display:block}
+    #log{position:fixed;top:12px;left:12px;background:rgba(0,0,0,.6);color:#fff;
+         padding:10px 12px;border-radius:10px;font:12px/1.4 ui-monospace,monospace;max-width:360px}
+  </style>
+</head>
+<body>
+  <div id="log">로딩 중…</div>
 
-  This minimal HTML file provides an embeddable 3D model viewer.  It uses the
-  <model-viewer> web component from Google’s model‑viewer library to load a
-  GLB file and display it interactively.  Users can rotate, pan and zoom the
-  model directly in the browser.  To embed this viewer in a Figma website or
-  any other web environment, simply host this file alongside your .glb model
-  and reference it via an <iframe> or other embedding mechanism.  The GLB
-  source can be changed by editing the `src` attribute on the <model-viewer>
-  element below.  Ensure that the referenced GLB file is accessible relative
-  to this HTML file or replace it with an absolute URL if hosted elsewhere.
--->
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Model Viewer</title>
-    <!--
-      Load the model‑viewer library from a public CDN.  Using type="module"
-      ensures that modern browsers correctly interpret the ES module.  This
-      script provides the custom <model-viewer> element used below.  If you
-      prefer to self‑host the library, download the script and adjust this
-      reference accordingly.
-    -->
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <style>
-      /* Reset margins and prevent scrollbars to allow the viewer to fill the frame */
-      html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        background: linear-gradient(135deg, #1d1d1d 0%, #2c2c2c 100%);
-        color: #ffffff;
-      }
-      /* Overlay containing a title and instructions */
-      #overlay {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        z-index: 10;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 15px 20px;
-        border-radius: 8px;
-        backdrop-filter: blur(5px);
-        max-width: 320px;
-      }
-      #overlay h1 {
-        margin: 0 0 8px;
-        font-size: 1.5rem;
-      }
-      #overlay p {
-        margin: 0;
-        font-size: 0.9rem;
-        line-height: 1.4;
-        color: #d0d0d0;
-      }
-      /* Full‑screen model viewer.  Width and height are set to 100% of the
-         viewport so that it fills whatever container or iframe in which it is
-         embedded.  The display: block ensures no default inline spacing. */
-      model-viewer {
-        width: 100vw;
-        height: 100vh;
-        display: block;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Instruction overlay.  Feel free to localize or remove this block.
-         It provides basic usage guidance to the viewer.  Korean text is
-         included as a nod to the original request. -->
-    <div id="overlay">
-      <h1>3D 모델 뷰어</h1>
-      <p>마우스로 드래그하여 회전하고, 스크롤로 확대/축소할 수 있습니다.</p>
-    </div>
-    <!--
-      The core of the page: a model-viewer component.  Adjust the `src`
-      attribute to point at your GLB file.  The camera-controls attribute
-      enables orbiting, and auto-rotate adds a gentle rotation when idle.
-      Shadow and exposure values are tuned for a balanced presentation.
-    -->
-    <model-viewer
-      id="viewer"
-      src="untitled.glb"
-      alt="A 3D model"
-      camera-controls
-      auto-rotate
-      shadow-intensity="1"
-      exposure="1.2"
-      ar
-      ar-modes="webxr scene-viewer quick-look"
-    ></model-viewer>
-  </body>
+  <model-viewer id="mv"
+    src="./untitled.glb?v=2"
+    camera-controls
+    auto-rotate
+    shadow-intensity="1"
+    exposure="1.1"
+    environment-image="neutral"
+    tone-mapping="neutral"
+    reveal="auto"
+    loading="eager"
+    ar ar-modes="webxr scene-viewer quick-look">
+  </model-viewer>
+
+  <script>
+    const mv = document.getElementById('mv');
+    const log = (m)=>document.getElementById('log').textContent = m;
+
+    mv.addEventListener('load',  ()=>log('✅ 로딩 성공'));
+    mv.addEventListener('error', e=>{
+      log('❌ 로드 오류: ' + (e.detail?.message || '알 수 없는 오류'));
+      console.error('model-viewer error detail:', e.detail);
+    });
+
+    // 네트워크/캐시 문제 탐지용
+    fetch('./untitled.glb?v=2')
+      .then(r => log(`파일 접근: ${r.status} ${r.statusText}`))
+      .catch(err => log('파일 접근 실패: ' + err));
+  </script>
+</body>
 </html>
